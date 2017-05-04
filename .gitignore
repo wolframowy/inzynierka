@@ -1,0 +1,14 @@
+AndroidStudio/MapTest/*.iml
+AndroidStudio/MapTest/.gradle
+AndroidStudio/MapTest/local.properties
+AndroidStudio/MapTest//.idea/workspace.xml
+AndroidStudio/MapTest//.idea/libraries
+AndroidStudio/MapTest/.DS_Store
+AndroidStudio/MapTest//build
+AndroidStudio/MapTest//captures
+AndroidStudio/MapTest/.externalNativeBuild
+eclipse
+jade
+JadeLeapAndroid-4.4.0
+Leap
+JADE-all-4.4.0.zip
