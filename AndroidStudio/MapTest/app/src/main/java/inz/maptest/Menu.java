@@ -82,6 +82,15 @@ public class Menu extends AppCompatActivity {
         super.onPause();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if(agentInterface == null)
+            findViewById(R.id.button_map).setVisibility(View.INVISIBLE);
+        else
+            findViewById(R.id.button_map).setVisibility(View.VISIBLE);
+    }
+
     private RuntimeCallback<AgentController> agentStartupCallback = new RuntimeCallback<AgentController>() {
         @Override
         public void onSuccess(AgentController newAgent) {
@@ -253,9 +262,14 @@ public class Menu extends AppCompatActivity {
             logger.log(Level.INFO, "Received intent " + action);
             try {
                 agentInterface = MicroRuntime.getAgent(nickname).getO2AInterface(MobileAgentInterface.class);
+
             } catch (ControllerException e) {
+                findViewById(R.id.button_map).setVisibility(View.INVISIBLE);
                 e.printStackTrace();
             }
+
+            if(agentInterface != null)
+                findViewById(R.id.button_map).setVisibility(View.VISIBLE);
 
         }
     }

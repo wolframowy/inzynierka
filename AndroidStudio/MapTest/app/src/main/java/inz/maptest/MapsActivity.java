@@ -8,13 +8,13 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
 import android.view.View;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -26,18 +26,18 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.CircleOptions;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import java.io.Serializable;
-import java.util.logging.Level;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import inz.agents.MobileAgentInterface;
+import inz.util.AgentPos;
+import inz.util.ParcelableLatLng;
 import jade.core.MicroRuntime;
 import jade.wrapper.ControllerException;
-
-import inz.util.Tuple;
 
 import static inz.maptest.R.id.map;
 
@@ -97,6 +97,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         unregisterReceiver(myReceiver);
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+    }
+
 
     /**
      * Manipulates the map once available.
@@ -118,7 +124,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 mCurrentLocation.getLongitude()), 10.0f));
         }
 
-        mMap.addMarker(new MarkerOptions().position(new LatLng(52.26, 21.0)).title("Chosen location"));
+        mMap.addMarker(new MarkerOptions().position(new LatLng(52.26, 21.0)).title("Chosen location").icon(BitmapDescriptorFactory.fromResource(R.drawable.marker)));
 
         // Add a marker in Sydney and move the camera
         //LatLng sydney = new LatLng(-34, 151);
@@ -128,10 +134,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     public void onSettingsClick(View view) {
         Intent intent = new Intent(this, SettingsActivity.class);
-        startActivity(intent);
-    }
-    public void onBackClick(View view) {
-        Intent intent = new Intent(this, Menu.class);
         startActivity(intent);
     }
 
@@ -211,6 +213,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
             LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
             agentInterface.updateLocation(mCurrentLocation);
+            agentInterface.startLocationBroadcast();
         }
     }
 
@@ -221,9 +224,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
            // mGoogleApiClient);
 
             mCurrentLocation = location;
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(
-                    new LatLng(mCurrentLocation.getLatitude(),
-                            mCurrentLocation.getLongitude())));
+//            mMap.moveCamera(CameraUpdateFactory.newLatLng(
+//                    new LatLng(mCurrentLocation.getLatitude(),
+//                            mCurrentLocation.getLongitude())));
             agentInterface.updateLocation(mCurrentLocation);
 
             //updateMarkers();
@@ -238,12 +241,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         @Override
         public void onReceive(Context context, Intent intent) {
 
-            Tuple<String, Location>[] group = (Tuple<String, Location>[]) intent.getSerializableExtra("GROUP");
+            //ArrayList<AgentPos<String, Location>> group = new ArrayList<>(Arrays.asList((AgentPos<String, Location>[]) intent.getSerializableExtra("GROUP")));
+
+            //AgentPos<String, Location>[] group = (AgentPos<String, Location>[]) intent.getSerializableExtra("GROUP");
+
+            //Bundle bundle = getIntent().getExtras();
+            ArrayList<AgentPos> group = agentInterface.getGroup();
             LatLng ll;
             mMap.clear();
-            for(Tuple<String, Location> aGroup: group){
-                ll = new LatLng(aGroup.getY().getLatitude(), aGroup.getY().getLongitude());
-                mMap.addMarker(new MarkerOptions().position(ll).title(aGroup.getX()));
+            for(AgentPos aGroup: group){
+                if(aGroup.getLatLng() != null) {
+                    ll = new LatLng(aGroup.getLatLng().latitude, aGroup.getLatLng().longitude);
+                    mMap.addMarker(new MarkerOptions().position(ll).title(aGroup.getName()).icon(BitmapDescriptorFactory.fromResource(R.drawable.marker)));
+                }
             }
 
         }
