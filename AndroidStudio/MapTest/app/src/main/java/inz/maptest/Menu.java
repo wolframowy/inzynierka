@@ -62,6 +62,8 @@ public class Menu extends AppCompatActivity {
         setupFilter.addAction("inz.agents.MobileAgent.SETUP_COMPLETE");
         registerReceiver(myReceiver, setupFilter);
 
+        
+
     }
 
     @Override
@@ -94,13 +96,6 @@ public class Menu extends AppCompatActivity {
     private RuntimeCallback<AgentController> agentStartupCallback = new RuntimeCallback<AgentController>() {
         @Override
         public void onSuccess(AgentController newAgent) {
-
-//            try {
-//                agentInterface = newAgent.getO2AInterface(MobileAgentInterface.class);
-//            } catch (StaleProxyException e) {
-//                e.printStackTrace();
-//            }
-
             isAgentRunning = true;
         }
 

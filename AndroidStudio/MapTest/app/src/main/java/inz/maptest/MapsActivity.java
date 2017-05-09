@@ -123,7 +123,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         new LatLng(mCurrentLocation.getLatitude(),
                                 mCurrentLocation.getLongitude()), 10.0f));
         }
-
         mMap.addMarker(new MarkerOptions().position(new LatLng(52.26, 21.0)).title("Chosen location").icon(BitmapDescriptorFactory.fromResource(R.drawable.marker)));
 
         // Add a marker in Sydney and move the camera
