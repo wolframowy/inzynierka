@@ -3,21 +3,28 @@ package inz.maptest;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.logging.Level;
 
 import inz.agents.MobileAgent;
 import inz.agents.MobileAgentInterface;
+import inz.util.AgentPos;
+import inz.util.PopUpWindow;
 import jade.android.AndroidHelper;
 import jade.android.MicroRuntimeService;
 import jade.android.MicroRuntimeServiceBinder;
@@ -59,7 +66,18 @@ public class Menu extends AppCompatActivity {
         setupFilter.addAction("inz.agents.MobileAgent.SETUP_COMPLETE");
         registerReceiver(myReceiver, setupFilter);
 
-        
+        IntentFilter nameTakenFilter = new IntentFilter();
+        nameTakenFilter.addAction("NAME_TAKEN");
+        registerReceiver(myReceiver, nameTakenFilter);
+
+        IntentFilter connectionErrorFilter = new IntentFilter();
+        connectionErrorFilter.addAction("CONNECTION_ERROR");
+        registerReceiver(myReceiver, connectionErrorFilter);
+
+        IntentFilter groupUpdateFilter = new IntentFilter();
+        groupUpdateFilter.addAction("inz.agents.MobileAgent.GROUP_UPDATE");
+        registerReceiver(myReceiver, groupUpdateFilter);
+
 
     }
 
@@ -90,6 +108,23 @@ public class Menu extends AppCompatActivity {
             findViewById(R.id.button_map).setVisibility(View.VISIBLE);
     }
 
+    private void disableEditTexts() {
+        findViewById(R.id.edit_host_name).setEnabled(false);
+
+        findViewById(R.id.edit_port).setEnabled(false);
+
+        findViewById(R.id.edit_ip).setEnabled(false);
+
+        findViewById(R.id.edit_name).setEnabled(false);
+
+        findViewById(R.id.button_start).setVisibility(View.INVISIBLE);
+
+        findViewById(R.id.showGroup).setVisibility(View.VISIBLE);
+        findViewById(R.id.showGroup).setFocusableInTouchMode(false);
+        findViewById(R.id.showGroup).setFocusable(false);
+    }
+
+
     private RuntimeCallback<AgentController> agentStartupCallback = new RuntimeCallback<AgentController>() {
         @Override
         public void onSuccess(AgentController newAgent) {
@@ -99,6 +134,9 @@ public class Menu extends AppCompatActivity {
         @Override
         public void onFailure(Throwable throwable) {
             logger.log(Level.INFO, "Nickname already in use!");
+            Intent broadcast = new Intent();
+            broadcast.setAction("NAME_TAKEN");
+            getApplicationContext().sendBroadcast(broadcast);
             microRuntimeServiceBinder.stopAgentContainer(containerShutdownCallback);
         }
     };
@@ -128,11 +166,10 @@ public class Menu extends AppCompatActivity {
 
     public void onStartClick(View view) {
 
-        if(agentInterface != null)
-            agentInterface.updateLocation(new Location("test"));
-
-        if (isAgentRunning)
+        if (isAgentRunning) {
+            new PopUpWindow(this, "Error", "The agent is already running on this device!");
             return;
+        }
 
         EditText groupHost = (EditText) findViewById(R.id.edit_host_name);
         EditText editName = (EditText) findViewById(R.id.edit_name);
@@ -208,6 +245,9 @@ public class Menu extends AppCompatActivity {
                         @Override
                         public void onFailure(Throwable throwable) {
                             logger.log(Level.SEVERE, "Failed to start the container...");
+                            Intent broadcast = new Intent();
+                            broadcast.setAction("CONNECTION_ERROR");
+                            getApplicationContext().sendBroadcast(broadcast);
                         }
                     });
         } else {
@@ -253,16 +293,38 @@ public class Menu extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             logger.log(Level.INFO, "Received intent " + action);
-            try {
-                agentInterface = MicroRuntime.getAgent(nickname).getO2AInterface(MobileAgentInterface.class);
+            if(action.equals("inz.agents.MobileAgent.SETUP_COMPLETE")) {
+                try {
+                    agentInterface = MicroRuntime.getAgent(nickname).getO2AInterface(MobileAgentInterface.class);
+                    disableEditTexts();
+                    ((TextView) findViewById(R.id.showGroup)).setText("- " + nickname);
 
-            } catch (ControllerException e) {
-                findViewById(R.id.button_map).setVisibility(View.INVISIBLE);
-                e.printStackTrace();
+                } catch (ControllerException e) {
+                    findViewById(R.id.button_map).setVisibility(View.INVISIBLE);
+                    e.printStackTrace();
+                }
+
+                if (agentInterface != null)
+                    findViewById(R.id.button_map).setVisibility(View.VISIBLE);
             }
-
-            if(agentInterface != null)
-                findViewById(R.id.button_map).setVisibility(View.VISIBLE);
+            else if(action.equals("NAME_TAKEN")){
+                new PopUpWindow(context,"Error", "The agent with this name already exists!" );
+            }
+            else if(action.equals("CONNECTION_ERROR")) {
+                new PopUpWindow(context,"Error", "Couldn't establish connection to server!" );
+            }
+            else if(action.equals("inz.agents.MobileAgent.GROUP_UPDATE")) {
+                ArrayList<AgentPos> group = agentInterface.getGroup();
+                String groupNames = new String();
+                groupNames += "- " + nickname;
+                for(AgentPos anAgent: group) {
+                    if(groupNames.isEmpty())
+                        groupNames += "- " + anAgent.getName();
+                    else
+                        groupNames += "\n" + "- " + anAgent.getName();
+                }
+                ((TextView) findViewById(R.id.showGroup)).setText(groupNames);
+            }
 
         }
     }

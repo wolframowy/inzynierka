@@ -247,6 +247,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onStartClick(View view) {
         mCenterDraggable = false;
         agentInterface.changeState(MobileAgentInterface.State.CHOOSE);
+        mCenterMarker.setDraggable(false);
         Button utilButton = (Button)findViewById(R.id.button_util);
         utilButton.setText("Add location");
         utilButton.setOnClickListener(new onAddLocationClickListener());

@@ -175,6 +175,9 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
                     } catch (UnreadableException e) {
                         e.printStackTrace();
                     }
+                    Intent broadcast = new Intent();
+                    broadcast.setAction("inz.agents.MobileAgent.GROUP_UPDATE");
+                    context.sendBroadcast(broadcast);
                 }
                 else
                     block();
@@ -550,6 +553,9 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
                     e.printStackTrace();
                 }
                 send(response);
+                Intent broadcast = new Intent();
+                broadcast.setAction("inz.agents.MobileAgent.GROUP_UPDATE");
+                context.sendBroadcast(broadcast);
             }
             else
                 block();

@@ -127,4 +127,16 @@
         android:layout_alignTop="@+id/edit_host_name"
         android:text="@string/view_host_name_val" />
 
+    <EditText
+        android:id="@+id/showGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/edit_port"
+        android:layout_alignParentBottom="true"
+        android:layout_alignStart="@+id/edit_port"
+        android:layout_below="@+id/edit_port"
+        android:ems="10"
+        android:inputType="textMultiLine"
+        android:visibility="invisible" />
+
 </RelativeLayout>
