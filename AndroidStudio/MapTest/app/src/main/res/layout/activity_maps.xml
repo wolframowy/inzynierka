@@ -8,10 +8,20 @@
     tools:context="inz.maptest.MapsActivity" >
 
     <Button
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="@string/button_settings"
-    android:onClick="onSettingsClick"
+        android:id="@+id/button_util"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/button_settings"
+        android:onClick="onSettingsClick"
+        android:visibility="invisible"
+        android:layout_gravity="bottom|left" />
+
+    <Button
+        android:id="@+id/button_stage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/button_start"
+        android:onClick="onStartClick"
         android:layout_gravity="bottom|right" />
 
 </fragment>

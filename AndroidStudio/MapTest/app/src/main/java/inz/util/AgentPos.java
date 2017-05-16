@@ -13,12 +13,13 @@ import java.io.Serializable;
 public class AgentPos implements Parcelable, Serializable{
     private String name;
     private ParcelableLatLng ll;
+
     public AgentPos(String name, ParcelableLatLng ll) {
         this.name = name;
         this.ll = ll;
     }
 
-    protected AgentPos(Parcel in) {
+    private AgentPos(Parcel in) {
         name = in.readString();
         ll = in.readParcelable(ParcelableLatLng.class.getClassLoader());
     }

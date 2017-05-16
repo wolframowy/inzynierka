@@ -9,13 +9,11 @@ import android.content.ServiceConnection;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.EditText;
 
-import java.io.Serializable;
 import java.util.logging.Level;
 
 import inz.agents.MobileAgent;
@@ -30,7 +28,6 @@ import jade.util.Logger;
 import jade.util.leap.Properties;
 import jade.wrapper.AgentController;
 import jade.wrapper.ControllerException;
-import jade.wrapper.StaleProxyException;
 
 public class Menu extends AppCompatActivity {
 
@@ -102,6 +99,7 @@ public class Menu extends AppCompatActivity {
         @Override
         public void onFailure(Throwable throwable) {
             logger.log(Level.INFO, "Nickname already in use!");
+            microRuntimeServiceBinder.stopAgentContainer(containerShutdownCallback);
         }
     };
 

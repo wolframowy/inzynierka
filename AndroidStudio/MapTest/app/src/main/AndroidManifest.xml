@@ -30,9 +30,13 @@
 
         <service android:name="jade.android.MicroRuntimeService" />
 
+        <!--<meta-data-->
+            <!--android:name="com.google.android.geo.API_KEY"-->
+            <!--android:value="@string/google_maps_key" />-->
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="@string/google_maps_key" />
+            android:value="@string/google_places_key" />
 
         <activity
             android:name=".MapsActivity"
@@ -45,6 +49,7 @@
         <activity
             android:name=".Menu"
             android:label="@string/title_activity_menu"
+            android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -53,5 +58,6 @@
             </intent-filter>
         </activity>
     </application>
+
 
 </manifest>

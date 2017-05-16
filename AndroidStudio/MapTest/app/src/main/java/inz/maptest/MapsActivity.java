@@ -2,13 +2,13 @@ package inz.maptest;
 
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -16,26 +16,34 @@ import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
+import android.widget.Button;
 
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.Places;
+import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import inz.agents.MobileAgentInterface;
 import inz.util.AgentPos;
-import inz.util.ParcelableLatLng;
 import jade.core.MicroRuntime;
 import jade.wrapper.ControllerException;
 
@@ -44,6 +52,8 @@ import static inz.maptest.R.id.map;
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
+        GoogleMap.OnMarkerDragListener,
+        GoogleMap.OnMarkerClickListener,
         LocationListener {
 
     private static final int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 0;
@@ -51,10 +61,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
     private Location mCurrentLocation;
+    private Map<String, Marker> mGroupMarkerMap;
+    private Map<String, Marker> mPlacesMarkerMap;
+    private Marker mCurrSelectedPlace;
+    private Marker mCenterMarker;
+    private Marker mDestMarker;
+    private boolean mCenterDraggable = true;
+    private int PLACE_PICKER = 1;
 
     private MyReceiver myReceiver;
 
-    private String nickname;
     private MobileAgentInterface agentInterface;
 
     @Override
@@ -66,7 +82,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(map);
         mapFragment.getMapAsync(this);
 
-        nickname = getIntent().getStringExtra("AGENT_NICKNAME");
+        String nickname = getIntent().getStringExtra("AGENT_NICKNAME");
 
         try {
             agentInterface = MicroRuntime.getAgent(nickname).getO2AInterface(MobileAgentInterface.class);
@@ -80,7 +96,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     .addConnectionCallbacks(this)
                     .addOnConnectionFailedListener(this)
                     .addApi(LocationServices.API)
+                    .addApi(Places.GEO_DATA_API)
+                    .addApi(Places.PLACE_DETECTION_API)
+                    .enableAutoManage(this, this)
                     .build();
+
         }
 
         myReceiver = new MyReceiver();
@@ -88,6 +108,36 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         IntentFilter groupUpdateFilter = new IntentFilter();
         groupUpdateFilter.addAction("inz.agents.MobileAgent.GROUP_UPDATE");
         registerReceiver(myReceiver, groupUpdateFilter);
+
+        IntentFilter centerCalculatedFilter = new IntentFilter();
+        centerCalculatedFilter.addAction("inz.agents.MobileAgent.CENTER_CALCULATED");
+        registerReceiver(myReceiver, centerCalculatedFilter);
+
+        IntentFilter centerUpdatedFilter = new IntentFilter();
+        centerUpdatedFilter.addAction("inz.agents.MobileAgent.CENTER_UPDATED");
+        registerReceiver(myReceiver, centerUpdatedFilter);
+
+        IntentFilter stateChangedFilter = new IntentFilter();
+        stateChangedFilter.addAction("inz.agents.MobileAgent.STATE_CHANGED");
+        registerReceiver(myReceiver, stateChangedFilter);
+
+        IntentFilter placesUpdatedFilter = new IntentFilter();
+        placesUpdatedFilter.addAction("inz.agents.MobileAgent.PLACES_UPDATED");
+        registerReceiver(myReceiver, placesUpdatedFilter);
+
+        IntentFilter votesUpdatedFilter = new IntentFilter();
+        votesUpdatedFilter.addAction("inz.agents.MobileAgent.VOTES_UPDATED");
+        registerReceiver(myReceiver, votesUpdatedFilter);
+
+        IntentFilter destChosenFilter = new IntentFilter();
+        destChosenFilter.addAction("inz.agents.MobileAgent.DEST_CHOSEN");
+        registerReceiver(myReceiver, destChosenFilter);
+
+        mGroupMarkerMap = new HashMap<String, Marker>() {};
+        mPlacesMarkerMap = new HashMap<String, Marker>() {};
+        mCenterMarker = null;
+
+        findViewById(R.id.button_stage).setVisibility(View.INVISIBLE);
 
     }
 
@@ -123,18 +173,115 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         new LatLng(mCurrentLocation.getLatitude(),
                                 mCurrentLocation.getLongitude()), 10.0f));
         }
-        mMap.addMarker(new MarkerOptions().position(new LatLng(52.26, 21.0)).title("Chosen location").icon(BitmapDescriptorFactory.fromResource(R.drawable.marker)));
-
-        // Add a marker in Sydney and move the camera
-        //LatLng sydney = new LatLng(-34, 151);
-        //mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        //mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        mMap.setOnMarkerDragListener(this);
+        mMap.setOnMarkerClickListener(this);
     }
 
     public void onSettingsClick(View view) {
         Intent intent = new Intent(this, SettingsActivity.class);
         startActivity(intent);
     }
+
+    private Activity getActivity() {
+        return this;
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        if(!mPlacesMarkerMap.isEmpty() && mPlacesMarkerMap.containsKey(marker.getTitle()))
+            mCurrSelectedPlace = marker;
+        return false;
+    }
+
+    private class onAddLocationClickListener implements View.OnClickListener {
+
+        @Override
+        public void onClick(View v) {
+            PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
+            builder.setLatLngBounds(new LatLngBounds(
+                    new LatLng(mCenterMarker.getPosition().latitude - 0.005,mCenterMarker.getPosition().longitude - 0.005),
+                    new LatLng(mCenterMarker.getPosition().latitude + 0.005,mCenterMarker.getPosition().longitude + 0.005)));
+
+            try {
+                startActivityForResult(builder.build(getActivity()), PLACE_PICKER);
+            } catch (GooglePlayServicesRepairableException | GooglePlayServicesNotAvailableException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private class onVoteClickListener implements View.OnClickListener {
+
+        @Override
+        public void onClick(View v) {
+            if(mCurrSelectedPlace != null) {
+                agentInterface.addVote(mCurrSelectedPlace.getTitle());
+            }
+        }
+    }
+
+    private class onSelectClickListener implements View.OnClickListener {
+
+        @Override
+        public void onClick(View v) {
+            agentInterface.choosePlace(mCurrSelectedPlace.getTitle());
+            agentInterface.changeState(MobileAgentInterface.State.LEAD);
+        }
+    }
+
+    private class onVotingClickListener implements View.OnClickListener {
+
+        @Override
+        public void onClick(View v) {
+            agentInterface.changeState(MobileAgentInterface.State.VOTE);
+            Button utilButton = (Button)findViewById(R.id.button_util);
+            utilButton.setText("Vote");
+            utilButton.setOnClickListener(new onVoteClickListener());
+
+            Button nextStageButton = (Button)findViewById(R.id.button_stage);
+            nextStageButton.setText("Select place");
+            nextStageButton.setOnClickListener(new onSelectClickListener());
+        }
+    }
+
+    public void onStartClick(View view) {
+        mCenterDraggable = false;
+        agentInterface.changeState(MobileAgentInterface.State.CHOOSE);
+        Button utilButton = (Button)findViewById(R.id.button_util);
+        utilButton.setText("Add location");
+        utilButton.setOnClickListener(new onAddLocationClickListener());
+        utilButton.setVisibility(View.VISIBLE);
+
+        Button nextStageButton = (Button)findViewById(R.id.button_stage);
+        nextStageButton.setText("Voting");
+        nextStageButton.setOnClickListener(new onVotingClickListener());
+
+    }
+
+    @Override
+    public void onMarkerDrag(Marker marker) {}
+
+    @Override
+    public void onMarkerDragEnd(Marker marker) {
+        String title = mCenterMarker.getTitle();
+        mCenterMarker.remove();
+        mCenterMarker = mMap.addMarker(new MarkerOptions().position(marker.getPosition()).title(title).draggable(mCenterDraggable));
+        agentInterface.setCenter(marker.getPosition());
+    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == PLACE_PICKER) {
+            if (resultCode == RESULT_OK) {
+                Place place = PlacePicker.getPlace(this, data);
+                mPlacesMarkerMap.put((String) place.getName(),
+                                    mMap.addMarker(new MarkerOptions().position(place.getLatLng()).title((String) place.getName())));
+                agentInterface.addPlace((String) place.getName(), place.getLatLng());
+            }
+        }
+    }
+
+    @Override
+    public void onMarkerDragStart(Marker marker) {}
 
     protected void onStart() {
         mGoogleApiClient.connect();
@@ -180,7 +327,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
+                                           @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: {
                 // If request is cancelled, the result arrays are empty.
@@ -239,20 +386,87 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         @Override
         public void onReceive(Context context, Intent intent) {
+            if(intent.getAction().equals("inz.agents.MobileAgent.GROUP_UPDATE")) {
+                ArrayList<AgentPos> group = agentInterface.getGroup();
+                LatLng ll;
+                for (AgentPos aGroup : group) {
+                    if (aGroup.getLatLng() != null) {
+                        ll = new LatLng(aGroup.getLatLng().latitude, aGroup.getLatLng().longitude);
+                        if(mGroupMarkerMap.containsKey(aGroup.getName()))
+                            mGroupMarkerMap.get(aGroup.getName()).remove();
 
-            //ArrayList<AgentPos<String, Location>> group = new ArrayList<>(Arrays.asList((AgentPos<String, Location>[]) intent.getSerializableExtra("GROUP")));
-
-            //AgentPos<String, Location>[] group = (AgentPos<String, Location>[]) intent.getSerializableExtra("GROUP");
-
-            //Bundle bundle = getIntent().getExtras();
-            ArrayList<AgentPos> group = agentInterface.getGroup();
-            LatLng ll;
-            mMap.clear();
-            for(AgentPos aGroup: group){
-                if(aGroup.getLatLng() != null) {
-                    ll = new LatLng(aGroup.getLatLng().latitude, aGroup.getLatLng().longitude);
-                    mMap.addMarker(new MarkerOptions().position(ll).title(aGroup.getName()).icon(BitmapDescriptorFactory.fromResource(R.drawable.marker)));
+                        mGroupMarkerMap.put(aGroup.getName(),
+                                       mMap.addMarker(
+                                               new MarkerOptions().
+                                                       position(ll).
+                                                       title(aGroup.getName())
+                                                       .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker))));
+                    }
                 }
+            }
+            else if(intent.getAction().equals("inz.agents.MobileAgent.CENTER_CALCULATED")) {
+                AgentPos center = agentInterface.getCenter();
+                if(center != null) {
+                    if(mCenterMarker != null)
+                        mCenterMarker.remove();
+                    LatLng ll = new LatLng(center.getLatLng().latitude, center.getLatLng().longitude);
+                    mCenterMarker = mMap.addMarker(new MarkerOptions().position(ll).title(center.getName()).draggable(mCenterDraggable));
+                    if(findViewById(R.id.button_stage).getVisibility() == View.INVISIBLE)
+                        findViewById(R.id.button_stage).setVisibility(View.VISIBLE);
+                }
+            }
+            else if(intent.getAction().equals("inz.agents.MobileAgent.CENTER_UPDATED")) {
+                AgentPos center = agentInterface.getCenter();
+                if(mCenterMarker != null)
+                    mCenterMarker.remove();
+                LatLng ll = new LatLng(center.getLatLng().latitude, center.getLatLng().longitude);
+                mCenterMarker = mMap.addMarker(new MarkerOptions().position(ll).title(center.getName()));
+            }
+            else if(intent.getAction().equals("inz.agents.MobileAgent.STATE_CHANGED")) {
+                MobileAgentInterface.State newState = (MobileAgentInterface.State) intent.getSerializableExtra("State");
+                if(newState == MobileAgentInterface.State.CHOOSE ){
+                    Button utilButton = (Button)findViewById(R.id.button_util);
+                    utilButton.setText("Add location");
+                    utilButton.setOnClickListener(new onAddLocationClickListener());
+                    utilButton.setVisibility(View.VISIBLE);
+                }
+                else if(newState == MobileAgentInterface.State.VOTE) {
+                    agentInterface.changeState(MobileAgentInterface.State.VOTE);
+                    Button utilButton = (Button)findViewById(R.id.button_util);
+                    utilButton.setText("Vote");
+                    utilButton.setOnClickListener(new onVoteClickListener());
+                }
+            }
+            else if(intent.getAction().equals("inz.agents.MobileAgent.PLACES_UPDATED")) {
+                ArrayList<AgentPos> places = agentInterface.getPlaces();
+                LatLng ll;
+                for (AgentPos aGroup : places) {
+                    if (aGroup.getLatLng() != null) {
+                        ll = new LatLng(aGroup.getLatLng().latitude, aGroup.getLatLng().longitude);
+                        if(mPlacesMarkerMap.containsKey(aGroup.getName()))
+                            mPlacesMarkerMap.get(aGroup.getName()).remove();
+
+                        mPlacesMarkerMap.put(aGroup.getName(),
+                                mMap.addMarker(
+                                        new MarkerOptions().
+                                                position(ll).
+                                                title(aGroup.getName())));
+                    }
+                }
+            }
+            else if(intent.getAction().equals("inz.agents.MobileAgent.VOTES_UPDATED")) {
+                HashMap<String, Integer> votes = agentInterface.getVotes();
+                for(Map.Entry<String, Integer> entry: votes.entrySet()) {
+                    mPlacesMarkerMap.get(entry.getKey()).setSnippet(entry.getValue().toString());
+                }
+            }
+            else if(intent.getAction().equals("inz.agents.MobileAgent.DEST_CHOSEN")) {
+                AgentPos dest = agentInterface.getDestination();
+                for(Map.Entry<String, Marker> entry: mPlacesMarkerMap.entrySet())
+                    entry.getValue().remove();
+                mCenterMarker.remove();
+                LatLng ll = new LatLng(dest.getLatLng().latitude, dest.getLatLng().longitude);
+                mDestMarker = mMap.addMarker(new MarkerOptions().title(dest.getName()).position(ll));
             }
 
         }

@@ -3,10 +3,13 @@ package inz.util;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.google.android.gms.maps.model.LatLng;
+
 import java.io.Serializable;
 
 /**
  * Created by Kuba on 06/05/2017.
+ * LatLng but parcelable
  */
 
 public class ParcelableLatLng implements Parcelable, Serializable{
@@ -18,7 +21,12 @@ public class ParcelableLatLng implements Parcelable, Serializable{
         this.longitude = longitude;
     }
 
-    protected ParcelableLatLng(Parcel in) {
+    public ParcelableLatLng(LatLng ll) {
+        latitude = ll.latitude;
+        longitude = ll.longitude;
+    }
+
+    private ParcelableLatLng(Parcel in) {
         latitude = in.readDouble();
         longitude = in.readDouble();
     }
