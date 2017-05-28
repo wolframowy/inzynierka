@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
@@ -55,11 +56,13 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
 import inz.agents.MobileAgentInterface;
 import inz.util.AgentPos;
+import inz.util.EncodedPolylineDecoder;
 import jade.core.MicroRuntime;
 import jade.imtp.leap.http.HTTPResponse;
 import jade.wrapper.ControllerException;
@@ -85,6 +88,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private Marker mDestMarker;
     private boolean mCenterDraggable = true;
     private int PLACE_PICKER = 1;
+
+    private List<LatLng> mPoly = new ArrayList<>();
 
     private MyReceiver myReceiver;
 
@@ -241,6 +246,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         @Override
         public void onClick(View v) {
+
+            mDestMarker = mCurrSelectedPlace;
+
             agentInterface.choosePlace(mCurrSelectedPlace.getTitle());
             agentInterface.changeState(MobileAgentInterface.State.LEAD);
 
@@ -249,6 +257,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             Button nextStageButton = (Button)findViewById(R.id.button_stage);
             nextStageButton.setVisibility(View.INVISIBLE);
+
+            googleDirectionsRequest();
         }
     }
 
@@ -268,7 +278,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     public void onStartClick(View view) {
-        //googleDirectionsRequest();
         mCenterDraggable = false;
         agentInterface.changeState(MobileAgentInterface.State.CHOOSE);
         mCenterMarker.setDraggable(false);
@@ -318,14 +327,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         super.onStop();
     }
 
-    protected HTTPResponse googleDirectionsRequest() {
-        HTTPResponse response = null;
+    protected void googleDirectionsRequest() {
         String url = "https://maps.googleapis.com/maps/api/directions/json?origin="
                 +mCurrentLocation.getLatitude()+","+mCurrentLocation.getLongitude()
-                +"&destination="+40.1927556+","+27.1712149+
+                +"&destination="+mDestMarker.getPosition().latitude+","+mDestMarker.getPosition().longitude+
                 "&key="+getResources().getString(R.string.google_directions_key);
         new googleDirectionsRequestJob().execute(url);
-        return response;
     }
 
     private class googleDirectionsRequestJob extends AsyncTask<String, Void, String> {
@@ -333,12 +340,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         @Override
         protected String doInBackground(String[] params) {
             try {
-            /*URL url = new URL("http://maps.googleapis.com/maps/api/directions/json?origin="
-                    +mCurrentLocation.getLatitude()+","+mCurrentLocation.getLongitude()
-                    +"&destination="+mDestMarker.getPosition().latitude+","+mDestMarker.getPosition().longitude+
-                    "&key="+R.string.google_directions_key);*/
                 URL url = new URL(params[0]);
                 HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+
                 try {
                     InputStream error = urlConnection.getErrorStream();
                     if(error != null) {
@@ -353,9 +357,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     if(!status.equals("OK"))
                         throw(new Exception("Response status \"" + status + "\""));
                     JSONObject routes = ((JSONArray) responseObj.get("routes")).getJSONObject(0);
-                    String cpoyrights = (String) routes.get("copyrights");
+                    String copyrights = (String) routes.get("copyrights");
                     JSONObject legs = ((JSONArray) routes.getJSONArray("legs")).getJSONObject(0);
                     JSONArray steps = (JSONArray) legs.getJSONArray("steps");
+                    String encodedPoints;
+                    for (int i=0; i<steps.length(); ++i) {
+                        encodedPoints = (String) steps.getJSONObject(i).getJSONObject("polyline").get("points");
+                        mPoly.addAll(EncodedPolylineDecoder.decodePoly(encodedPoints));
+                    }
+
                 } catch(Exception e) {
                     e.printStackTrace();
                 } finally {
@@ -364,12 +374,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             } catch(java.io.IOException e) {
                 e.printStackTrace();
             }
-            return "some message";
+            return "Success";
         }
 
         @Override
         protected void onPostExecute(String message) {
             //process message
+            if(message.equals("Success")) {
+                try {
+                    mMap.addPolyline(new PolylineOptions().addAll(mPoly).width(5).color(Color.BLUE));
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
