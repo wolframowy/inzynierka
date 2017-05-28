@@ -9,12 +9,14 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.util.JsonReader;
 import android.view.View;
 import android.widget.Button;
 
@@ -37,14 +39,29 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 
 import inz.agents.MobileAgentInterface;
 import inz.util.AgentPos;
 import jade.core.MicroRuntime;
+import jade.imtp.leap.http.HTTPResponse;
 import jade.wrapper.ControllerException;
 
 import static inz.maptest.R.id.map;
@@ -226,6 +243,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         public void onClick(View v) {
             agentInterface.choosePlace(mCurrSelectedPlace.getTitle());
             agentInterface.changeState(MobileAgentInterface.State.LEAD);
+
+            Button utilButton = (Button)findViewById(R.id.button_util);
+            utilButton.setVisibility(View.INVISIBLE);
+
+            Button nextStageButton = (Button)findViewById(R.id.button_stage);
+            nextStageButton.setVisibility(View.INVISIBLE);
         }
     }
 
@@ -245,6 +268,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     public void onStartClick(View view) {
+        //googleDirectionsRequest();
         mCenterDraggable = false;
         agentInterface.changeState(MobileAgentInterface.State.CHOOSE);
         mCenterMarker.setDraggable(false);
@@ -292,6 +316,66 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onStop() {
         mGoogleApiClient.disconnect();
         super.onStop();
+    }
+
+    protected HTTPResponse googleDirectionsRequest() {
+        HTTPResponse response = null;
+        String url = "https://maps.googleapis.com/maps/api/directions/json?origin="
+                +mCurrentLocation.getLatitude()+","+mCurrentLocation.getLongitude()
+                +"&destination="+40.1927556+","+27.1712149+
+                "&key="+getResources().getString(R.string.google_directions_key);
+        new googleDirectionsRequestJob().execute(url);
+        return response;
+    }
+
+    private class googleDirectionsRequestJob extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String[] params) {
+            try {
+            /*URL url = new URL("http://maps.googleapis.com/maps/api/directions/json?origin="
+                    +mCurrentLocation.getLatitude()+","+mCurrentLocation.getLongitude()
+                    +"&destination="+mDestMarker.getPosition().latitude+","+mDestMarker.getPosition().longitude+
+                    "&key="+R.string.google_directions_key);*/
+                URL url = new URL(params[0]);
+                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                try {
+                    InputStream error = urlConnection.getErrorStream();
+                    if(error != null) {
+                        throw new Exception(error.toString());
+                    }
+                    InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+                    String responseStr = convertStreamToString(in);
+                    //StringReader sr = new StringReader(responseStr);
+                    //JsonReader reader = new JsonReader(new InputStreamReader(in, "UTF-8"));
+                    JSONObject responseObj = new JSONObject(responseStr);
+                    String status = (String) responseObj.get("status");
+                    if(!status.equals("OK"))
+                        throw(new Exception("Response status \"" + status + "\""));
+                    JSONObject routes = ((JSONArray) responseObj.get("routes")).getJSONObject(0);
+                    String cpoyrights = (String) routes.get("copyrights");
+                    JSONObject legs = ((JSONArray) routes.getJSONArray("legs")).getJSONObject(0);
+                    JSONArray steps = (JSONArray) legs.getJSONArray("steps");
+                } catch(Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    urlConnection.disconnect();
+                }
+            } catch(java.io.IOException e) {
+                e.printStackTrace();
+            }
+            return "some message";
+        }
+
+        @Override
+        protected void onPostExecute(String message) {
+            //process message
+        }
+    }
+
+    static String convertStreamToString(java.io.InputStream is) {
+        java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
+        return s.hasNext() ? s.next() : "";
     }
 
     @Override
@@ -468,6 +552,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mCenterMarker.remove();
                 LatLng ll = new LatLng(dest.getLatLng().latitude, dest.getLatLng().longitude);
                 mDestMarker = mMap.addMarker(new MarkerOptions().title(dest.getName()).position(ll));
+
+                Button utilButton = (Button)findViewById(R.id.button_util);
+                utilButton.setVisibility(View.INVISIBLE);
             }
 
         }
