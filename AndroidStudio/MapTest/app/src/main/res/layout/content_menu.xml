@@ -32,6 +32,7 @@
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
         android:onClick="onSettingsClick"
+        android:visibility="invisible"
         android:id="@+id/button_settings" />
 
     <Button
