@@ -17,9 +17,9 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
-import android.util.JsonReader;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
@@ -46,27 +46,21 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 
 import inz.agents.MobileAgentInterface;
 import inz.util.AgentPos;
 import inz.util.EncodedPolylineDecoder;
 import jade.core.MicroRuntime;
-import jade.imtp.leap.http.HTTPResponse;
 import jade.wrapper.ControllerException;
 
+import static inz.maptest.R.id.copyrights;
 import static inz.maptest.R.id.map;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
@@ -90,6 +84,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private int PLACE_PICKER = 1;
 
     private List<LatLng> mPoly = new ArrayList<>();
+    private String copyrights;
 
     private MyReceiver myReceiver;
 
@@ -357,7 +352,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     if(!status.equals("OK"))
                         throw(new Exception("Response status \"" + status + "\""));
                     JSONObject routes = ((JSONArray) responseObj.get("routes")).getJSONObject(0);
-                    String copyrights = (String) routes.get("copyrights");
+                    copyrights = (String) routes.get("copyrights");
                     JSONObject legs = ((JSONArray) routes.getJSONArray("legs")).getJSONObject(0);
                     JSONArray steps = (JSONArray) legs.getJSONArray("steps");
                     String encodedPoints;
@@ -382,6 +377,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             //process message
             if(message.equals("Success")) {
                 try {
+                    ((TextView) findViewById(R.id.copyrights)).setText(copyrights);
                     mMap.addPolyline(new PolylineOptions().addAll(mPoly).width(5).color(Color.BLUE));
                 } catch (Exception e){
                     e.printStackTrace();
@@ -572,6 +568,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 Button utilButton = (Button)findViewById(R.id.button_util);
                 utilButton.setVisibility(View.INVISIBLE);
+
+                googleDirectionsRequest();
             }
 
         }
