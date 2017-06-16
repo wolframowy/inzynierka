@@ -22,9 +22,12 @@ import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.SimpleBehaviour;
 import jade.core.behaviours.TickerBehaviour;
+import jade.domain.FIPAAgentManagement.AMSAgentDescription;
+import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
+import jade.domain.AMSService;
 
 /**
  * Created by Kuba on 20/04/2017.
@@ -46,6 +49,7 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
     private final String PLACES_ID = "PLACES";
     private final String ADD_VOTE_ID = "ADD VOTE";
     private final String DESTINATION_ID = "DESTINATION CHOSEN";
+    private final String HOST_LEAVE_ID = "HOST LEAVE";
 
     private ParcelableLatLng currLocation;
     private ArrayList<AgentPos> group;
@@ -106,15 +110,19 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
 
     protected void takeDown() {
         if(mode.equals("Client")){
-            addBehaviour(new OneShotBehaviour() {
-                @Override
-                public void action() {
-                    ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
-                    msg.addReceiver(new AID(hostName, AID.ISLOCALNAME));
-                    msg.setConversationId(DEREGISTRATION_ID);
-                    send(msg);
-                }
-            });
+            ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
+            msg.addReceiver(new AID(hostName, AID.ISLOCALNAME));
+            msg.setConversationId(DEREGISTRATION_ID);
+            send(msg);
+        }
+        else if(mode.equals("Host")) {
+            ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+            for (AgentPos aGroup : group) {
+                if(!aGroup.getName().equals(this.getLocalName()))
+                    msg.addReceiver(new AID(aGroup.getName(), AID.ISLOCALNAME));
+            }
+            msg.setConversationId(HOST_LEAVE_ID);
+            send(msg);
         }
     }
 
@@ -149,6 +157,28 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
 
     private void setupClient(Object[] args) {
         hostName = args[2].toString();
+        try {
+            SearchConstraints c = new SearchConstraints();
+            c.setMaxResults (new Long(-1));
+            AMSAgentDescription[] agents = AMSService.search(this, new AMSAgentDescription(), c );
+            Boolean notFound = true;
+            for(AMSAgentDescription anAgent : agents) {
+                if(anAgent.getName().equals(new AID(hostName, AID.ISLOCALNAME))){
+                    notFound = false;
+                    break;
+                }
+            }
+            if(notFound) {
+                Intent broadcast = new Intent();
+                broadcast.setAction("inz.agents.MobileAgent.HOST_NOT_FOUND");
+                context.sendBroadcast(broadcast);
+                this.doDelete();
+                return;
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
         addBehaviour(new OneShotBehaviour() {
             @Override
             public void action() {
@@ -211,6 +241,24 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
                             addBehaviour(new getDestinationBehaviour());
                             break;
                     }
+
+                }
+                else
+                    block();
+            }
+        });
+
+        addBehaviour(new CyclicBehaviour() {
+            @Override
+            public void action() {
+                MessageTemplate mt = MessageTemplate.and(MessageTemplate.MatchPerformative(ACLMessage.INFORM), MessageTemplate.MatchConversationId(HOST_LEAVE_ID));
+                ACLMessage msg = myAgent.receive(mt);
+                if(msg != null) {
+                    this.myAgent.doDelete();
+
+                    Intent broadcast = new Intent();
+                    broadcast.setAction("inz.agents.MobileAgent.HOST_LEFT");
+                    context.sendBroadcast(broadcast);
 
                 }
                 else
@@ -523,6 +571,13 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
                 for(AgentPos aGroup: group){
                     if(aGroup.getName().equals(msg.getSender().getLocalName())) {
                         group.remove(group.indexOf(aGroup));
+                        addBehaviour(new UpdateGroupBehaviour());
+
+                        Intent broadcast = new Intent();
+                        broadcast.setAction("inz.agents.MobileAgent.AGENT_LEFT");
+                        broadcast.putExtra("NAME", msg.getSender().getLocalName());
+                        context.sendBroadcast(broadcast);
+
                         if(state == State.GATHER)
                             calculateCenter();
                         break;
@@ -541,25 +596,33 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
             ACLMessage msg = myAgent.receive(mt);
             if(msg != null) {
                 group.add(new AgentPos(msg.getSender().getLocalName(), null));
-                ACLMessage response = new ACLMessage(ACLMessage.INFORM);
-                for (AgentPos aGroup : group) {
-                    if(!aGroup.getName().equals(this.getAgent().getLocalName()))
-                        response.addReceiver(new AID(aGroup.getName(), AID.ISLOCALNAME));
-                }
-                response.setConversationId(GROUP_UPDATE_ID);
-                try {
-                    response.setContentObject( group.toArray());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                send(response);
-                Intent broadcast = new Intent();
-                broadcast.setAction("inz.agents.MobileAgent.GROUP_UPDATE");
-                context.sendBroadcast(broadcast);
+                addBehaviour(new UpdateGroupBehaviour());
             }
             else
                 block();
 
+        }
+    }
+
+    private class UpdateGroupBehaviour extends OneShotBehaviour {
+
+        @Override
+        public void action() {
+            ACLMessage response = new ACLMessage(ACLMessage.INFORM);
+            for (AgentPos aGroup : group) {
+                if(!aGroup.getName().equals(this.getAgent().getLocalName()))
+                    response.addReceiver(new AID(aGroup.getName(), AID.ISLOCALNAME));
+            }
+            response.setConversationId(GROUP_UPDATE_ID);
+            try {
+                response.setContentObject( group.toArray());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            send(response);
+            Intent broadcast = new Intent();
+            broadcast.setAction("inz.agents.MobileAgent.GROUP_UPDATE");
+            context.sendBroadcast(broadcast);
         }
     }
 

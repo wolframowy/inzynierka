@@ -62,9 +62,12 @@ public class Menu extends AppCompatActivity {
 
         myReceiver = new MyReceiver();
 
-        IntentFilter setupFilter = new IntentFilter();
-        setupFilter.addAction("inz.agents.MobileAgent.SETUP_COMPLETE");
-        registerReceiver(myReceiver, setupFilter);
+        IntentFilter mobileAgentFilter = new IntentFilter();
+        mobileAgentFilter.addAction("inz.agents.MobileAgent.SETUP_COMPLETE");
+        mobileAgentFilter.addAction("inz.agents.MobileAgent.GROUP_UPDATE");
+        mobileAgentFilter.addAction("inz.agents.MobileAgent.HOST_LEFT");
+        mobileAgentFilter.addAction("inz.agents.MobileAgent.HOST_NOT_FOUND");
+        registerReceiver(myReceiver, mobileAgentFilter);
 
         IntentFilter nameTakenFilter = new IntentFilter();
         nameTakenFilter.addAction("NAME_TAKEN");
@@ -74,9 +77,6 @@ public class Menu extends AppCompatActivity {
         connectionErrorFilter.addAction("CONNECTION_ERROR");
         registerReceiver(myReceiver, connectionErrorFilter);
 
-        IntentFilter groupUpdateFilter = new IntentFilter();
-        groupUpdateFilter.addAction("inz.agents.MobileAgent.GROUP_UPDATE");
-        registerReceiver(myReceiver, groupUpdateFilter);
 
 
     }
@@ -324,6 +324,18 @@ public class Menu extends AppCompatActivity {
                         groupNames += "\n" + "- " + anAgent.getName();
                 }
                 ((TextView) findViewById(R.id.showGroup)).setText(groupNames);
+            }
+            else if(action.equals("inz.agents.MobileAgent.HOST_LEFT")) {
+                new PopUpWindow(context, "Host left", "Host has left the group.");
+                agentInterface = null;
+                findViewById(R.id.button_map).setVisibility(View.INVISIBLE);
+            }
+            else if(action.equals("inz.agents.MobileAgent.HOST_NOT_FOUND")) {
+                new PopUpWindow(context, "Host not found", "Host with given name does not exist.");
+                agentInterface = null;
+                findViewById(R.id.button_map).setVisibility(View.INVISIBLE);
+                microRuntimeServiceBinder.stopAgentContainer(containerShutdownCallback);
+                isAgentRunning = false;
             }
 
         }

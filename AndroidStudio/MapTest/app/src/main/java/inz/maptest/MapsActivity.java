@@ -57,6 +57,7 @@ import java.util.Map;
 import inz.agents.MobileAgentInterface;
 import inz.util.AgentPos;
 import inz.util.EncodedPolylineDecoder;
+import inz.util.PopUpWindow;
 import jade.core.MicroRuntime;
 import jade.wrapper.ControllerException;
 
@@ -122,33 +123,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         myReceiver = new MyReceiver();
 
-        IntentFilter groupUpdateFilter = new IntentFilter();
-        groupUpdateFilter.addAction("inz.agents.MobileAgent.GROUP_UPDATE");
-        registerReceiver(myReceiver, groupUpdateFilter);
-
-        IntentFilter centerCalculatedFilter = new IntentFilter();
-        centerCalculatedFilter.addAction("inz.agents.MobileAgent.CENTER_CALCULATED");
-        registerReceiver(myReceiver, centerCalculatedFilter);
-
-        IntentFilter centerUpdatedFilter = new IntentFilter();
-        centerUpdatedFilter.addAction("inz.agents.MobileAgent.CENTER_UPDATED");
-        registerReceiver(myReceiver, centerUpdatedFilter);
-
-        IntentFilter stateChangedFilter = new IntentFilter();
-        stateChangedFilter.addAction("inz.agents.MobileAgent.STATE_CHANGED");
-        registerReceiver(myReceiver, stateChangedFilter);
-
-        IntentFilter placesUpdatedFilter = new IntentFilter();
-        placesUpdatedFilter.addAction("inz.agents.MobileAgent.PLACES_UPDATED");
-        registerReceiver(myReceiver, placesUpdatedFilter);
-
-        IntentFilter votesUpdatedFilter = new IntentFilter();
-        votesUpdatedFilter.addAction("inz.agents.MobileAgent.VOTES_UPDATED");
-        registerReceiver(myReceiver, votesUpdatedFilter);
-
-        IntentFilter destChosenFilter = new IntentFilter();
-        destChosenFilter.addAction("inz.agents.MobileAgent.DEST_CHOSEN");
-        registerReceiver(myReceiver, destChosenFilter);
+        IntentFilter mobileAgentFilter = new IntentFilter();
+        mobileAgentFilter.addAction("inz.agents.MobileAgent.GROUP_UPDATE");
+        mobileAgentFilter.addAction("inz.agents.MobileAgent.CENTER_CALCULATED");
+        mobileAgentFilter.addAction("inz.agents.MobileAgent.CENTER_UPDATED");
+        mobileAgentFilter.addAction("inz.agents.MobileAgent.STATE_CHANGED");
+        mobileAgentFilter.addAction("inz.agents.MobileAgent.PLACES_UPDATED");
+        mobileAgentFilter.addAction("inz.agents.MobileAgent.VOTES_UPDATED");
+        mobileAgentFilter.addAction("inz.agents.MobileAgent.DEST_CHOSEN");
+        mobileAgentFilter.addAction("inz.agents.MobileAgent.AGENT_LEFT");
+        mobileAgentFilter.addAction("inz.agents.MobileAgent.HOST_LEFT");
+        registerReceiver(myReceiver, mobileAgentFilter);
 
         mGroupMarkerMap = new HashMap<String, Marker>() {};
         mPlacesMarkerMap = new HashMap<String, Marker>() {};
@@ -162,6 +147,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(myReceiver);
+    }
+
+    protected void doFinish() {
+        this.finish();
     }
 
     @Override
@@ -484,14 +473,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(intent.getAction().equals("inz.agents.MobileAgent.GROUP_UPDATE")) {
+            String action = intent.getAction();
+
+            if(action.equals("inz.agents.MobileAgent.GROUP_UPDATE")) {
                 ArrayList<AgentPos> group = agentInterface.getGroup();
                 LatLng ll;
+                for(Marker aMarker : mGroupMarkerMap.values())
+                    aMarker.remove();
                 for (AgentPos aGroup : group) {
                     if (aGroup.getLatLng() != null) {
                         ll = new LatLng(aGroup.getLatLng().latitude, aGroup.getLatLng().longitude);
-                        if(mGroupMarkerMap.containsKey(aGroup.getName()))
-                            mGroupMarkerMap.get(aGroup.getName()).remove();
+//                        if(mGroupMarkerMap.containsKey(aGroup.getName()))
+//                            mGroupMarkerMap.get(aGroup.getName()).remove();
 
                         mGroupMarkerMap.put(aGroup.getName(),
                                        mMap.addMarker(
@@ -502,7 +495,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     }
                 }
             }
-            else if(intent.getAction().equals("inz.agents.MobileAgent.CENTER_CALCULATED")) {
+            else if(action.equals("inz.agents.MobileAgent.CENTER_CALCULATED")) {
                 AgentPos center = agentInterface.getCenter();
                 if(center != null) {
                     if(mCenterMarker != null)
@@ -513,14 +506,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         findViewById(R.id.button_stage).setVisibility(View.VISIBLE);
                 }
             }
-            else if(intent.getAction().equals("inz.agents.MobileAgent.CENTER_UPDATED")) {
+            else if(action.equals("inz.agents.MobileAgent.CENTER_UPDATED")) {
                 AgentPos center = agentInterface.getCenter();
                 if(mCenterMarker != null)
                     mCenterMarker.remove();
                 LatLng ll = new LatLng(center.getLatLng().latitude, center.getLatLng().longitude);
                 mCenterMarker = mMap.addMarker(new MarkerOptions().position(ll).title(center.getName()));
             }
-            else if(intent.getAction().equals("inz.agents.MobileAgent.STATE_CHANGED")) {
+            else if(action.equals("inz.agents.MobileAgent.STATE_CHANGED")) {
                 MobileAgentInterface.State newState = (MobileAgentInterface.State) intent.getSerializableExtra("State");
                 if(newState == MobileAgentInterface.State.CHOOSE ){
                     Button utilButton = (Button)findViewById(R.id.button_util);
@@ -535,7 +528,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     utilButton.setOnClickListener(new onVoteClickListener());
                 }
             }
-            else if(intent.getAction().equals("inz.agents.MobileAgent.PLACES_UPDATED")) {
+            else if(action.equals("inz.agents.MobileAgent.PLACES_UPDATED")) {
                 ArrayList<AgentPos> places = agentInterface.getPlaces();
                 LatLng ll;
                 for (AgentPos aGroup : places) {
@@ -552,13 +545,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     }
                 }
             }
-            else if(intent.getAction().equals("inz.agents.MobileAgent.VOTES_UPDATED")) {
+            else if(action.equals("inz.agents.MobileAgent.VOTES_UPDATED")) {
                 HashMap<String, Integer> votes = agentInterface.getVotes();
                 for(Map.Entry<String, Integer> entry: votes.entrySet()) {
                     mPlacesMarkerMap.get(entry.getKey()).setSnippet(entry.getValue().toString());
                 }
             }
-            else if(intent.getAction().equals("inz.agents.MobileAgent.DEST_CHOSEN")) {
+            else if(action.equals("inz.agents.MobileAgent.DEST_CHOSEN")) {
                 AgentPos dest = agentInterface.getDestination();
                 for(Map.Entry<String, Marker> entry: mPlacesMarkerMap.entrySet())
                     entry.getValue().remove();
@@ -570,6 +563,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 utilButton.setVisibility(View.INVISIBLE);
 
                 googleDirectionsRequest();
+            }
+            else if(action.equals("inz.agents.MobileAgent.AGENT_LEFT"))
+                new PopUpWindow(context, "Agent left", intent.getStringExtra("NAME") + " has left the group.");
+            else if(action.equals("inz.agents.MobileAgent.HOST_LEFT")) {
+                //new PopUpWindow(context, "Host left", "Host has left the group.");
+                doFinish();
             }
 
         }
