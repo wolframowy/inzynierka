@@ -346,7 +346,7 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
 
     public void startLocationBroadcast() {
 
-        addBehaviour(new TickerBehaviour(this, 20000) {
+        addBehaviour(new TickerBehaviour(this, 10000) {
             @Override
             protected void onTick() {
                 ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
@@ -376,7 +376,7 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
             }
         });
 
-        addBehaviour(new TickerBehaviour(this, 30000) {
+        addBehaviour(new TickerBehaviour(this, 10000) {
             @Override
             protected void onTick() {
                 Intent broadcast = new Intent();

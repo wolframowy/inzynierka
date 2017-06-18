@@ -56,6 +56,7 @@ import java.util.Map;
 
 import inz.agents.MobileAgentInterface;
 import inz.util.AgentPos;
+import inz.util.BitmapResize;
 import inz.util.EncodedPolylineDecoder;
 import inz.util.PopUpWindow;
 import jade.core.MicroRuntime;
@@ -72,6 +73,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         LocationListener {
 
     private static final int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 0;
+    private final int DEST_MARKER_BASE_SIZE = 20;
     private GoogleMap mMap;
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
@@ -231,6 +233,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         @Override
         public void onClick(View v) {
 
+            if(mCurrSelectedPlace == null || mCurrSelectedPlace == mCenterMarker)
+            {
+                new PopUpWindow(v.getContext(), "Select place", "You must select one place to progress");
+                return;
+            }
+
             mDestMarker = mCurrSelectedPlace;
 
             agentInterface.choosePlace(mCurrSelectedPlace.getTitle());
@@ -242,7 +250,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Button nextStageButton = (Button)findViewById(R.id.button_stage);
             nextStageButton.setVisibility(View.INVISIBLE);
 
-            googleDirectionsRequest();
+            //googleDirectionsRequest();
         }
     }
 
@@ -283,7 +291,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMarkerDragEnd(Marker marker) {
         String title = mCenterMarker.getTitle();
         mCenterMarker.remove();
-        mCenterMarker = mMap.addMarker(new MarkerOptions().position(marker.getPosition()).title(title).draggable(mCenterDraggable));
+        mCenterMarker = mMap.addMarker(
+                                new MarkerOptions().position(marker.getPosition()).title(title)
+                                        .draggable(mCenterDraggable)
+                                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.centermarker))
+                                        .anchor(0.5f, 0.5f)
+                        );
         agentInterface.setCenter(marker.getPosition());
     }
     @Override
@@ -292,7 +305,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             if (resultCode == RESULT_OK) {
                 Place place = PlacePicker.getPlace(this, data);
                 mPlacesMarkerMap.put((String) place.getName(),
-                                    mMap.addMarker(new MarkerOptions().position(place.getLatLng()).title((String) place.getName())));
+                                    mMap.addMarker(new MarkerOptions()
+                                            .position(place.getLatLng())
+                                            .title((String) place.getName())
+                                            .anchor(0.5f, 0.5f)
+                                            .icon(BitmapDescriptorFactory.fromBitmap(BitmapResize.resizeMapIcons(this, "destmarker", DEST_MARKER_BASE_SIZE, DEST_MARKER_BASE_SIZE)))// fromResource(R.drawable.destmarker))
+                                    ));
                 agentInterface.addPlace((String) place.getName(), place.getLatLng());
             }
         }
@@ -367,6 +385,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             if(message.equals("Success")) {
                 try {
                     ((TextView) findViewById(R.id.copyrights)).setText(copyrights);
+                    (findViewById(R.id.copyrights)).setVisibility(View.VISIBLE);
                     mMap.addPolyline(new PolylineOptions().addAll(mPoly).width(5).color(Color.BLUE));
                 } catch (Exception e){
                     e.printStackTrace();
@@ -491,7 +510,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                                new MarkerOptions().
                                                        position(ll).
                                                        title(aGroup.getName())
-                                                       .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker))));
+                                                       .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker))
+                                                       .anchor(0.5f, 0.5f)));
                     }
                 }
             }
@@ -501,7 +521,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     if(mCenterMarker != null)
                         mCenterMarker.remove();
                     LatLng ll = new LatLng(center.getLatLng().latitude, center.getLatLng().longitude);
-                    mCenterMarker = mMap.addMarker(new MarkerOptions().position(ll).title(center.getName()).draggable(mCenterDraggable));
+                    mCenterMarker = mMap.addMarker(new MarkerOptions().position(ll).title(center.getName()).draggable(mCenterDraggable).icon(BitmapDescriptorFactory.fromResource(R.drawable.centermarker)).anchor(0.5f, 0.5f));
                     if(findViewById(R.id.button_stage).getVisibility() == View.INVISIBLE)
                         findViewById(R.id.button_stage).setVisibility(View.VISIBLE);
                 }
@@ -511,7 +531,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 if(mCenterMarker != null)
                     mCenterMarker.remove();
                 LatLng ll = new LatLng(center.getLatLng().latitude, center.getLatLng().longitude);
-                mCenterMarker = mMap.addMarker(new MarkerOptions().position(ll).title(center.getName()));
+                mCenterMarker = mMap.addMarker(new MarkerOptions().position(ll).title(center.getName()).icon(BitmapDescriptorFactory.fromResource(R.drawable.centermarker)).anchor(0.5f, 0.5f));
             }
             else if(action.equals("inz.agents.MobileAgent.STATE_CHANGED")) {
                 MobileAgentInterface.State newState = (MobileAgentInterface.State) intent.getSerializableExtra("State");
@@ -548,6 +568,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             else if(action.equals("inz.agents.MobileAgent.VOTES_UPDATED")) {
                 HashMap<String, Integer> votes = agentInterface.getVotes();
                 for(Map.Entry<String, Integer> entry: votes.entrySet()) {
+                    int enlarge = entry.getValue() * 2;
+                    mPlacesMarkerMap.get(entry.getKey()).setIcon(BitmapDescriptorFactory.fromBitmap(BitmapResize.resizeMapIcons(context, "destmarker", DEST_MARKER_BASE_SIZE + enlarge, DEST_MARKER_BASE_SIZE + enlarge)));
                     mPlacesMarkerMap.get(entry.getKey()).setSnippet(entry.getValue().toString());
                 }
             }
