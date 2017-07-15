@@ -62,7 +62,6 @@ import inz.util.PopUpWindow;
 import jade.core.MicroRuntime;
 import jade.wrapper.ControllerException;
 
-import static inz.maptest.R.id.copyrights;
 import static inz.maptest.R.id.map;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
@@ -85,6 +84,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private Marker mDestMarker;
     private boolean mCenterDraggable = true;
     private int PLACE_PICKER = 1;
+    private int votes;
 
     private List<LatLng> mPoly = new ArrayList<>();
     private String copyrights;
@@ -223,7 +223,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         @Override
         public void onClick(View v) {
             if(mCurrSelectedPlace != null) {
-                agentInterface.addVote(mCurrSelectedPlace.getTitle());
+                if(votes > 0) {
+                    votes = votes - 1;
+                    if(votes == 0)
+                        ((TextView) findViewById(R.id.votesNo)).setText("");
+                    else ((TextView) findViewById(R.id.votesNo)).setText("" + votes);
+                    agentInterface.addVote(mCurrSelectedPlace.getTitle());
+                }
             }
         }
     }
@@ -250,7 +256,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Button nextStageButton = (Button)findViewById(R.id.button_stage);
             nextStageButton.setVisibility(View.INVISIBLE);
 
-            //googleDirectionsRequest();
         }
     }
 
@@ -266,6 +271,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Button nextStageButton = (Button)findViewById(R.id.button_stage);
             nextStageButton.setText("Select place");
             nextStageButton.setOnClickListener(new onSelectClickListener());
+
+            votes = agentInterface.getMaxVotes();
+
+            ((TextView) findViewById(R.id.votesNo)).setText("" + votes);
+
         }
     }
 
@@ -546,6 +556,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     Button utilButton = (Button)findViewById(R.id.button_util);
                     utilButton.setText("Vote");
                     utilButton.setOnClickListener(new onVoteClickListener());
+
+                    votes = agentInterface.getMaxVotes();
+                    ((TextView) findViewById(R.id.votesNo)).setText("" + votes);
+
                 }
             }
             else if(action.equals("inz.agents.MobileAgent.PLACES_UPDATED")) {

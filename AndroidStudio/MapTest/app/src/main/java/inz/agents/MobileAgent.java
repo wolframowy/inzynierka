@@ -556,6 +556,8 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
 
     public AgentPos getDestination() { return destination; }
 
+    public int getMaxVotes() { return MAX_VOTES; }
+
     /***********************************************
      ***********************************************
      **************  BEHAVIOURS  *******************

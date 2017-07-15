@@ -50,11 +50,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/button_map"
-        android:layout_centerHorizontal="true"
         android:layout_marginTop="130dp"
         android:ems="10"
         android:inputType="textPersonName"
-        android:hint="@string/edit_name_hint" />
+        android:hint="@string/edit_name_hint"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:layout_toRightOf="@+id/textView4"
+        android:layout_toEndOf="@+id/textView4" />
 
     <EditText
         android:id="@+id/edit_ip"
@@ -66,7 +69,9 @@
         android:layout_marginTop="10dp"
         android:ems="10"
         android:inputType="textPersonName"
-        android:hint="@string/edit_ip_hint" />
+        android:hint="@string/edit_ip_hint"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
 
     <EditText
         android:id="@+id/edit_port"
@@ -78,7 +83,9 @@
         android:hint="@string/edit_port_hint"
         android:layout_below="@+id/edit_ip"
         android:layout_alignLeft="@+id/edit_ip"
-        android:layout_alignStart="@+id/edit_ip" />
+        android:layout_alignStart="@+id/edit_ip"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
 
     <TextView
         android:id="@+id/view_name"
@@ -117,7 +124,9 @@
         android:layout_marginBottom="13dp"
         android:ems="10"
         android:inputType="textPersonName"
-        android:hint="@string/edit_host_name_hint" />
+        android:hint="@string/edit_host_name_hint"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
 
     <TextView
         android:id="@+id/textView4"

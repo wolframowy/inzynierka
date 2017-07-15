@@ -42,4 +42,6 @@ public interface MobileAgentInterface extends Serializable {
     void choosePlace(String name);
 
     AgentPos getDestination();
+
+    int getMaxVotes ();
 }
