@@ -39,14 +39,17 @@
             android:value="@string/google_directions_key" />
 
         <activity
+            android:launchMode="singleTop"
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps">
+            android:screenOrientation="portrait"
 
         </activity>
         <activity
             android:name=".SettingsActivity"
             android:label="@string/title_activity_settings" />
         <activity
+            android:launchMode="singleTop"
             android:name=".Menu"
             android:label="@string/title_activity_menu"
             android:screenOrientation="portrait"

@@ -276,6 +276,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             ((TextView) findViewById(R.id.votesNo)).setText("" + votes);
 
+            ((TextView) findViewById(R.id.copyrights)).setText("VOTE NOW");
+            (findViewById(R.id.copyrights)).setVisibility(View.VISIBLE);
+
         }
     }
 
@@ -291,6 +294,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Button nextStageButton = (Button)findViewById(R.id.button_stage);
         nextStageButton.setText("Voting");
         nextStageButton.setOnClickListener(new onVotingClickListener());
+
+        ((TextView) findViewById(R.id.copyrights)).setText("ADD LOCATIONS");
+        (findViewById(R.id.copyrights)).setVisibility(View.VISIBLE);
 
     }
 
@@ -550,6 +556,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     utilButton.setText("Add location");
                     utilButton.setOnClickListener(new onAddLocationClickListener());
                     utilButton.setVisibility(View.VISIBLE);
+
+                    ((TextView) findViewById(R.id.copyrights)).setText("ADD LOCATIONS");
+                    (findViewById(R.id.copyrights)).setVisibility(View.VISIBLE);
                 }
                 else if(newState == MobileAgentInterface.State.VOTE) {
                     agentInterface.changeState(MobileAgentInterface.State.VOTE);
@@ -559,6 +568,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                     votes = agentInterface.getMaxVotes();
                     ((TextView) findViewById(R.id.votesNo)).setText("" + votes);
+
+                    ((TextView) findViewById(R.id.copyrights)).setText("VOTE NOW");
+                    (findViewById(R.id.copyrights)).setVisibility(View.VISIBLE);
 
                 }
             }
@@ -571,11 +583,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         if(mPlacesMarkerMap.containsKey(aGroup.getName()))
                             mPlacesMarkerMap.get(aGroup.getName()).remove();
 
-                        mPlacesMarkerMap.put(aGroup.getName(),
-                                mMap.addMarker(
-                                        new MarkerOptions().
-                                                position(ll).
-                                                title(aGroup.getName())));
+                        mPlacesMarkerMap.put((String) aGroup.getName(),
+                                mMap.addMarker(new MarkerOptions()
+                                        .position(ll)
+                                        .title((String) aGroup.getName())
+                                        .anchor(0.5f, 0.5f)
+                                        .icon(BitmapDescriptorFactory.fromBitmap(BitmapResize.resizeMapIcons(context, "destmarker", DEST_MARKER_BASE_SIZE, DEST_MARKER_BASE_SIZE)))// fromResource(R.drawable.destmarker))
+                                ));
                     }
                 }
             }

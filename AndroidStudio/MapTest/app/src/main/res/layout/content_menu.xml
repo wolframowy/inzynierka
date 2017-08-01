@@ -73,20 +73,6 @@
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true" />
 
-    <EditText
-        android:id="@+id/edit_port"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="19dp"
-        android:ems="10"
-        android:inputType="number"
-        android:hint="@string/edit_port_hint"
-        android:layout_below="@+id/edit_ip"
-        android:layout_alignLeft="@+id/edit_ip"
-        android:layout_alignStart="@+id/edit_ip"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
-
     <TextView
         android:id="@+id/view_name"
         android:layout_width="wrap_content"
@@ -104,15 +90,6 @@
         android:layout_alignParentStart="true"
         android:layout_alignTop="@+id/edit_ip"
         android:text="@string/view_ip_val" />
-
-    <TextView
-        android:id="@+id/textView3"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/view_port_val"
-        android:layout_alignTop="@+id/edit_port"
-        android:layout_toStartOf="@+id/edit_port"
-        android:layout_toLeftOf="@+id/edit_port" />
 
     <EditText
         android:id="@+id/edit_host_name"
@@ -141,12 +118,12 @@
         android:id="@+id/showGroup"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/edit_port"
-        android:layout_alignParentBottom="true"
-        android:layout_alignStart="@+id/edit_port"
-        android:layout_below="@+id/edit_port"
         android:ems="10"
         android:inputType="textMultiLine"
-        android:visibility="invisible" />
+        android:visibility="invisible"
+        android:layout_below="@+id/edit_ip"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="28dp"
+        android:layout_alignParentBottom="true" />
 
 </RelativeLayout>

@@ -38,6 +38,8 @@ import jade.wrapper.ControllerException;
 
 public class Menu extends AppCompatActivity {
 
+    private final String SERVER_PORT = "1099";
+
     private Logger logger = Logger.getJADELogger(this.getClass().getName());
 
     private boolean isAgentRunning;
@@ -49,7 +51,7 @@ public class Menu extends AppCompatActivity {
 
     private String nickname;    // name of this Agent
     private String mainHost;    // IP address of the main container
-    private String mainPort;    // port of the main container
+    private String mainPort = SERVER_PORT;    // port of the main container
     private String groupHostName;   // name of the host
 
     @Override
@@ -110,8 +112,6 @@ public class Menu extends AppCompatActivity {
 
     private void disableEditTexts() {
         findViewById(R.id.edit_host_name).setEnabled(false);
-
-        findViewById(R.id.edit_port).setEnabled(false);
 
         findViewById(R.id.edit_ip).setEnabled(false);
 
@@ -174,12 +174,10 @@ public class Menu extends AppCompatActivity {
         EditText groupHost = (EditText) findViewById(R.id.edit_host_name);
         EditText editName = (EditText) findViewById(R.id.edit_name);
         EditText editIp = (EditText) findViewById(R.id.edit_ip);
-        EditText editPort = (EditText) findViewById(R.id.edit_port);
 
         groupHostName = groupHost.getText().toString();
         nickname = editName.getText().toString();
         mainHost = editIp.getText().toString();
-        mainPort = editPort.getText().toString();
 
         if (mainPort.length() != 0 && mainHost.length() != 0 && nickname.length() != 0) {
 
@@ -226,8 +224,6 @@ public class Menu extends AppCompatActivity {
                 editName.setHint("Fill!");
             if (mainHost.length() == 0)
                 editIp.setHint("Fill!");
-            if (mainPort.length() == 0)
-                editPort.setHint("Fill!");
         }
     }
 
