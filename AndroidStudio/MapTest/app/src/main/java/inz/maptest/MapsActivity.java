@@ -40,6 +40,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import org.json.JSONArray;
@@ -87,6 +88,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private int votes;
 
     private List<LatLng> mPoly = new ArrayList<>();
+    private Polyline route = null;
     private String copyrights;
 
     private MyReceiver myReceiver;
@@ -379,6 +381,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     JSONObject legs = ((JSONArray) routes.getJSONArray("legs")).getJSONObject(0);
                     JSONArray steps = (JSONArray) legs.getJSONArray("steps");
                     String encodedPoints;
+                    mPoly.clear();
                     for (int i=0; i<steps.length(); ++i) {
                         encodedPoints = (String) steps.getJSONObject(i).getJSONObject("polyline").get("points");
                         mPoly.addAll(EncodedPolylineDecoder.decodePoly(encodedPoints));
@@ -402,7 +405,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 try {
                     ((TextView) findViewById(R.id.copyrights)).setText(copyrights);
                     (findViewById(R.id.copyrights)).setVisibility(View.VISIBLE);
-                    mMap.addPolyline(new PolylineOptions().addAll(mPoly).width(5).color(Color.BLUE));
+                    if(route!=null)
+                        route.remove();
+                    route = mMap.addPolyline(new PolylineOptions().addAll(mPoly).width(5).color(Color.BLUE));
                 } catch (Exception e){
                     e.printStackTrace();
                 }
@@ -497,10 +502,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //                            mCurrentLocation.getLongitude())));
             agentInterface.updateLocation(mCurrentLocation);
 
-            //updateMarkers();
-            //LatLng here = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
-            //mMap.addMarker(new MarkerOptions().position(here).title("Actual location"));
-            //mMap.moveCamera(CameraUpdateFactory.newLatLng(here));
+            if( mDestMarker != null ) {
+//                if(route != null)
+//                    route.remove();
+                googleDirectionsRequest();
+            }
         }
     }
 
