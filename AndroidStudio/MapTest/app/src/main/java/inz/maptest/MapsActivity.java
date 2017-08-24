@@ -87,7 +87,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private int PLACE_PICKER = 1;
     private int votes;
 
-    private List<LatLng> mPoly = new ArrayList<>();
+    private List<LatLng> mPoly = new ArrayList();
     private Polyline route = null;
     private String copyrights;
 
@@ -214,7 +214,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             try {
                 startActivityForResult(builder.build(getActivity()), PLACE_PICKER);
-            } catch (GooglePlayServicesRepairableException | GooglePlayServicesNotAvailableException e) {
+            } catch (GooglePlayServicesRepairableException e) {
+                e.printStackTrace();
+            } catch (GooglePlayServicesNotAvailableException e) {
                 e.printStackTrace();
             }
         }
@@ -485,8 +487,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mMap.getUiSettings().setMyLocationButtonEnabled(true);
             mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
             LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
-            agentInterface.updateLocation(mCurrentLocation);
-            agentInterface.startLocationBroadcast();
+            if(mCurrentLocation != null){
+                agentInterface.updateLocation(mCurrentLocation);
+                agentInterface.startLocationBroadcast();
+            }
+
         }
     }
 
@@ -495,12 +500,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
            // Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
            // mGoogleApiClient);
-
+            if(mCenterMarker == null) {
+                agentInterface.updateLocation(location);
+                agentInterface.startLocationBroadcast();
+            }
+            else{
+                agentInterface.updateLocation(location);
+            }
             mCurrentLocation = location;
+
+
 //            mMap.moveCamera(CameraUpdateFactory.newLatLng(
 //                    new LatLng(mCurrentLocation.getLatitude(),
 //                            mCurrentLocation.getLongitude())));
-            agentInterface.updateLocation(mCurrentLocation);
+
 
             if( mDestMarker != null ) {
 //                if(route != null)

@@ -85,19 +85,16 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
 
         mode = (String) args[1];
 
-        switch (mode) {
-            case "Host":
-                votes = new HashMap<String, Integer>() {};
-                setupHost();
-                break;
-
-            case "Client":
-                setupClient(args);
-                break;
-
-            default:
-                takeDown();
-                return;
+        if(mode == "Host") {
+            votes = new HashMap<String, Integer>() {};
+            setupHost();
+        }
+        else if(mode == "Client") {
+            setupClient(args);
+        }
+        else {
+            takeDown();
+            return;
         }
 
         registerO2AInterface(MobileAgentInterface.class, this);
@@ -130,29 +127,7 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
         // Behaviour updating group with new members
         addBehaviour(new registerBehaviour());
         addBehaviour(new deRegisterBehaviour());
-        addBehaviour(new CyclicBehaviour() {
-            @Override
-            public void action() {
-                MessageTemplate mt = MessageTemplate.and(MessageTemplate.MatchPerformative(ACLMessage.INFORM), MessageTemplate.MatchConversationId(LOCATION_UPDATE_ID));
-                ACLMessage msg = myAgent.receive(mt);
-                if(msg != null) {
-                    int i;
-                    for( i=0; i<group.size();++i) {
-                        if(group.get(i).getName().equals(msg.getSender().getLocalName()))
-                            break;
-                    }
-                    if (i<group.size()) {
-                        try {
-                            group.get(i).setLatLng((ParcelableLatLng) msg.getContentObject());
-                        } catch (UnreadableException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-                else
-                    block();
-            }
-        });
+        addBehaviour(new receiveLocationUpdateBehaviour());
     }
 
     private void setupClient(Object[] args) {
@@ -197,7 +172,7 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
                 if(msg != null) {
                     try {
                         Object[] c =(Object[]) msg.getContentObject();
-                        group = new ArrayList<>();
+                        group = new ArrayList();
                         for(Object obj: c) {
                             group.add((AgentPos) obj);
                         }
@@ -415,7 +390,7 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
 
 
     public ArrayList<AgentPos> getGroup() {
-        ArrayList<AgentPos> othersGroup = new ArrayList<>(group);
+        ArrayList<AgentPos> othersGroup = new ArrayList(group);
         for(int i=0; i<othersGroup.size(); ++i) {
             if(othersGroup.get(i).getName().equals(this.getLocalName())) {
                 othersGroup.remove(i);
@@ -606,6 +581,30 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
         }
     }
 
+    private class receiveLocationUpdateBehaviour extends CyclicBehaviour {
+        @Override
+        public void action() {
+            MessageTemplate mt = MessageTemplate.and(MessageTemplate.MatchPerformative(ACLMessage.INFORM), MessageTemplate.MatchConversationId(LOCATION_UPDATE_ID));
+            ACLMessage msg = myAgent.receive(mt);
+            if(msg != null) {
+                int i;
+                for( i=0; i<group.size();++i) {
+                    if(group.get(i).getName().equals(msg.getSender().getLocalName()))
+                        break;
+                }
+                if (i<group.size()) {
+                    try {
+                        group.get(i).setLatLng((ParcelableLatLng) msg.getContentObject());
+                    } catch (UnreadableException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            else
+                block();
+        }
+    }
+
     private class UpdateGroupBehaviour extends OneShotBehaviour {
 
         @Override
@@ -637,7 +636,7 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
             if(msg != null) {
                 try {
                     Object[] c = (Object[]) msg.getContentObject();
-                    selectedPlaces = new ArrayList<>();
+                    selectedPlaces = new ArrayList();
                     for(Object obj: c) {
                         selectedPlaces.add((AgentPos) obj);
                     }
