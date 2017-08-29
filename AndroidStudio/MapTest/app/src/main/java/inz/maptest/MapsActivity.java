@@ -260,6 +260,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Button nextStageButton = (Button)findViewById(R.id.button_stage);
             nextStageButton.setVisibility(View.INVISIBLE);
 
+            ((TextView) findViewById(R.id.votesNo)).setText("");
+
         }
     }
 
@@ -630,6 +632,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 Button utilButton = (Button)findViewById(R.id.button_util);
                 utilButton.setVisibility(View.INVISIBLE);
+
+                ((TextView) findViewById(R.id.votesNo)).setText("");
 
                 googleDirectionsRequest();
             }
