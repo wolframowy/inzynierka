@@ -12,6 +12,7 @@ import inz.util.ParcelableLatLng;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 
 
@@ -50,6 +51,7 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
     private final String ADD_VOTE_ID = "ADD VOTE";
     private final String DESTINATION_ID = "DESTINATION CHOSEN";
     private final String HOST_LEAVE_ID = "HOST LEAVE";
+    private final String MSG_ID = "MESSAGE";
 
     private ParcelableLatLng currLocation;
     private ArrayList<AgentPos> group;
@@ -61,6 +63,9 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
     private AgentPos center;
     private AgentPos destination;
     private int votesLeft = MAX_VOTES;
+
+    private ArrayList<String> msgList;
+    private String message;
 
     private State state = State.GATHER;
 
@@ -82,6 +87,7 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
         group.add(new AgentPos(this.getLocalName(), null));
 
         selectedPlaces = new ArrayList<AgentPos>() {};
+        msgList = new ArrayList<String>() {};
 
         mode = (String) args[1];
 
@@ -128,6 +134,7 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
         addBehaviour(new registerBehaviour());
         addBehaviour(new deRegisterBehaviour());
         addBehaviour(new receiveLocationUpdateBehaviour());
+        addBehaviour(new receiveMsg());
     }
 
     private void setupClient(Object[] args) {
@@ -240,6 +247,8 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
                     block();
             }
         });
+
+        addBehaviour(new receiveMsg());
     }
 
     private void calculateCenter () {
@@ -533,6 +542,15 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
 
     public int getMaxVotes() { return MAX_VOTES; }
 
+    @Override
+    public ArrayList<String> getMsgList() { return msgList; }
+
+    public void sendMsg(String msg) {
+        message = msg;
+
+        addBehaviour(new sendMsg());
+    }
+
     /***********************************************
      ***********************************************
      **************  BEHAVIOURS  *******************
@@ -778,6 +796,44 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
         @Override
         public boolean done() {
             return (state != State.VOTE);
+        }
+    }
+
+    private class sendMsg extends OneShotBehaviour {
+
+        @Override
+        public void action() {
+            ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+            for (AgentPos aGroup : group) {
+                msg.addReceiver(new AID(aGroup.getName(), AID.ISLOCALNAME));
+            }
+            msg.setConversationId(MSG_ID);
+            try {
+                msg.setContentObject(message);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            send(msg);
+        }
+
+    }
+
+    private class receiveMsg extends CyclicBehaviour {
+
+        @Override
+        public void action() {
+            MessageTemplate mt = MessageTemplate.and(MessageTemplate.MatchPerformative(ACLMessage.INFORM), MessageTemplate.MatchConversationId(MSG_ID));
+            ACLMessage msg = myAgent.receive(mt);
+            if(msg != null) {
+                msgList.add("[" + Calendar.getInstance().getTime().toString() + "] " +
+                            msg.getSender().getLocalName() + ": " + msg.getContent());
+
+                Intent broadcast = new Intent();
+                broadcast.setAction("inz.agents.MobileAgent.MESSAGE_RECEIVED");
+                context.sendBroadcast(broadcast);
+            }
+            else
+                block();
         }
     }
 

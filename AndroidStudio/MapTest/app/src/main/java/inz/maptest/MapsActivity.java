@@ -137,6 +137,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mobileAgentFilter.addAction("inz.agents.MobileAgent.DEST_CHOSEN");
         mobileAgentFilter.addAction("inz.agents.MobileAgent.AGENT_LEFT");
         mobileAgentFilter.addAction("inz.agents.MobileAgent.HOST_LEFT");
+        mobileAgentFilter.addAction("inz.agents.MobileAgent.MESSAGE_RECEIVED");
         registerReceiver(myReceiver, mobileAgentFilter);
 
         mGroupMarkerMap = new HashMap<String, Marker>() {};
@@ -640,8 +641,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             else if(action.equals("inz.agents.MobileAgent.AGENT_LEFT"))
                 new PopUpWindow(context, "Agent left", intent.getStringExtra("NAME") + " has left the group.");
             else if(action.equals("inz.agents.MobileAgent.HOST_LEFT")) {
-                //new PopUpWindow(context, "Host left", "Host has left the group.");
+                new PopUpWindow(context, "Host left", "Host has left the group.");
                 doFinish();
+            }
+            else if(action.equals("inz.agents.MobileAgent.MESSAGE_RECEIVED")) {
+                agentInterface.getMsgList();
             }
 
         }
