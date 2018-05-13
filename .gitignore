@@ -1,5 +1,6 @@
 AndroidStudio/MapTest/*.iml
 AndroidStudio/MapTest/.gradle
+AndroidStudio/MapTest/.idea
 AndroidStudio/MapTest/local.properties
 AndroidStudio/MapTest/.idea/workspace.xml
 AndroidStudio/MapTest/.idea/libraries
