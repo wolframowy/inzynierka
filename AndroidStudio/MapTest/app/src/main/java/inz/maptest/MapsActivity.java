@@ -19,6 +19,8 @@ import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -237,6 +239,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             }
         }
+    }
+
+    public void onChatClick(View view) {
+        if(findViewById(R.id.chat).getVisibility() == View.INVISIBLE) {
+            findViewById(R.id.chat).setVisibility(View.VISIBLE);
+            ((ImageButton) findViewById(R.id.button_chat)).setColorFilter(Color.argb(255, 255, 255, 255));
+        }
+        else
+            findViewById(R.id.chat).setVisibility(View.INVISIBLE);
+    }
+
+    public void onSendClick(View view) {
+        EditText chat_msg = (EditText) findViewById(R.id.chat_msg);
+        String msg = chat_msg.getText().toString();
+        if(msg.equals(""))
+            return;
+        agentInterface.sendMsg(msg);
+        ((EditText) findViewById(R.id.chat_msg)).setText("");
     }
 
     private class onSelectClickListener implements View.OnClickListener {
@@ -645,7 +665,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 doFinish();
             }
             else if(action.equals("inz.agents.MobileAgent.MESSAGE_RECEIVED")) {
-                agentInterface.getMsgList();
+                ArrayList<String> messages = agentInterface.getMsgList();
+                String to_show = "";
+                for (String msg:messages) {
+                    to_show += msg + "\n";
+                }
+                ((TextView) findViewById(R.id.chat_text)).setText(to_show);
+                if(findViewById(R.id.button_chat).getVisibility() == View.INVISIBLE)
+                    ((ImageButton) findViewById(R.id.button_chat)).setColorFilter(Color.argb(255, 63, 81, 181));
             }
 
         }

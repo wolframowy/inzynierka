@@ -11,6 +11,7 @@ import inz.util.AgentPos;
 import inz.util.ParcelableLatLng;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -808,11 +809,9 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
                 msg.addReceiver(new AID(aGroup.getName(), AID.ISLOCALNAME));
             }
             msg.setConversationId(MSG_ID);
-            try {
-                msg.setContentObject(message);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+
+            msg.setContent(message);
+
             send(msg);
         }
 
@@ -825,7 +824,9 @@ public class MobileAgent extends Agent implements MobileAgentInterface {
             MessageTemplate mt = MessageTemplate.and(MessageTemplate.MatchPerformative(ACLMessage.INFORM), MessageTemplate.MatchConversationId(MSG_ID));
             ACLMessage msg = myAgent.receive(mt);
             if(msg != null) {
-                msgList.add("[" + Calendar.getInstance().getTime().toString() + "] " +
+                Calendar cal = Calendar.getInstance();
+                SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+                msgList.add("[" + sdf.format(cal.getTime()) + "] " +
                             msg.getSender().getLocalName() + ": " + msg.getContent());
 
                 Intent broadcast = new Intent();
