@@ -1,71 +1,72 @@
 package inz.maptest;
 
 
-import android.Manifest;
-import android.app.Activity;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.graphics.Color;
-import android.location.Location;
-import android.os.AsyncTask;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
-import android.support.v4.content.ContextCompat;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.TextView;
+        import android.Manifest;
+        import android.app.Activity;
+        import android.content.BroadcastReceiver;
+        import android.content.Context;
+        import android.content.Intent;
+        import android.content.IntentFilter;
+        import android.content.pm.PackageManager;
+        import android.graphics.Color;
+        import android.location.Location;
+        import android.os.AsyncTask;
+        import android.support.annotation.NonNull;
+        import android.support.annotation.Nullable;
+        import android.support.v4.app.ActivityCompat;
+        import android.support.v4.app.FragmentActivity;
+        import android.os.Bundle;
+        import android.support.v4.content.ContextCompat;
+        import android.view.View;
+        import android.widget.Button;
+        import android.widget.EditText;
+        import android.widget.ImageButton;
+        import android.widget.ScrollView;
+        import android.widget.TextView;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
-import com.google.android.gms.common.GooglePlayServicesRepairableException;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationListener;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.places.Place;
-import com.google.android.gms.location.places.Places;
-import com.google.android.gms.location.places.ui.PlacePicker;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
+        import com.google.android.gms.common.ConnectionResult;
+        import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+        import com.google.android.gms.common.GooglePlayServicesRepairableException;
+        import com.google.android.gms.common.api.GoogleApiClient;
+        import com.google.android.gms.location.LocationListener;
+        import com.google.android.gms.location.LocationRequest;
+        import com.google.android.gms.location.LocationServices;
+        import com.google.android.gms.location.places.Place;
+        import com.google.android.gms.location.places.Places;
+        import com.google.android.gms.location.places.ui.PlacePicker;
+        import com.google.android.gms.maps.CameraUpdateFactory;
+        import com.google.android.gms.maps.GoogleMap;
+        import com.google.android.gms.maps.OnMapReadyCallback;
+        import com.google.android.gms.maps.SupportMapFragment;
+        import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+        import com.google.android.gms.maps.model.LatLng;
+        import com.google.android.gms.maps.model.LatLngBounds;
+        import com.google.android.gms.maps.model.Marker;
+        import com.google.android.gms.maps.model.MarkerOptions;
+        import com.google.android.gms.maps.model.Polyline;
+        import com.google.android.gms.maps.model.PolylineOptions;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+        import org.json.JSONArray;
+        import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+        import java.io.BufferedInputStream;
+        import java.io.InputStream;
+        import java.net.HttpURLConnection;
+        import java.net.URL;
+        import java.util.ArrayList;
+        import java.util.HashMap;
+        import java.util.List;
+        import java.util.Map;
 
-import inz.agents.MobileAgentInterface;
-import inz.util.AgentPos;
-import inz.util.BitmapResize;
-import inz.util.EncodedPolylineDecoder;
-import inz.util.PopUpWindow;
-import jade.core.MicroRuntime;
-import jade.wrapper.ControllerException;
+        import inz.agents.MobileAgentInterface;
+        import inz.util.AgentPos;
+        import inz.util.BitmapResize;
+        import inz.util.EncodedPolylineDecoder;
+        import inz.util.PopUpWindow;
+        import jade.core.MicroRuntime;
+        import jade.wrapper.ControllerException;
 
-import static inz.maptest.R.id.map;
+        import static inz.maptest.R.id.map;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks,
@@ -182,9 +183,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.getUiSettings().setMapToolbarEnabled(false);
 
         if (mCurrentLocation != null) {
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                        new LatLng(mCurrentLocation.getLatitude(),
-                                mCurrentLocation.getLongitude()), 10.0f));
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                    new LatLng(mCurrentLocation.getLatitude(),
+                            mCurrentLocation.getLongitude()), 10.0f));
         }
         mMap.setOnMarkerDragListener(this);
         mMap.setOnMarkerClickListener(this);
@@ -245,6 +246,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if(findViewById(R.id.chat).getVisibility() == View.INVISIBLE) {
             findViewById(R.id.chat).setVisibility(View.VISIBLE);
             ((ImageButton) findViewById(R.id.button_chat)).setColorFilter(Color.argb(255, 255, 255, 255));
+            scrollToBottom();
         }
         else
             findViewById(R.id.chat).setVisibility(View.INVISIBLE);
@@ -335,11 +337,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         String title = mCenterMarker.getTitle();
         mCenterMarker.remove();
         mCenterMarker = mMap.addMarker(
-                                new MarkerOptions().position(marker.getPosition()).title(title)
-                                        .draggable(mCenterDraggable)
-                                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.centermarker))
-                                        .anchor(0.5f, 0.5f)
-                        );
+                new MarkerOptions().position(marker.getPosition()).title(title)
+                        .draggable(mCenterDraggable)
+                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.centermarker))
+                        .anchor(0.5f, 0.5f)
+        );
         agentInterface.setCenter(marker.getPosition());
     }
     @Override
@@ -348,12 +350,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             if (resultCode == RESULT_OK) {
                 Place place = PlacePicker.getPlace(this, data);
                 mPlacesMarkerMap.put((String) place.getName(),
-                                    mMap.addMarker(new MarkerOptions()
-                                            .position(place.getLatLng())
-                                            .title((String) place.getName())
-                                            .anchor(0.5f, 0.5f)
-                                            .icon(BitmapDescriptorFactory.fromBitmap(BitmapResize.resizeMapIcons(this, "destmarker", DEST_MARKER_BASE_SIZE, DEST_MARKER_BASE_SIZE)))// fromResource(R.drawable.destmarker))
-                                    ));
+                        mMap.addMarker(new MarkerOptions()
+                                .position(place.getLatLng())
+                                .title((String) place.getName())
+                                .anchor(0.5f, 0.5f)
+                                .icon(BitmapDescriptorFactory.fromBitmap(BitmapResize.resizeMapIcons(this, "destmarker", DEST_MARKER_BASE_SIZE, DEST_MARKER_BASE_SIZE)))// fromResource(R.drawable.destmarker))
+                        ));
                 agentInterface.addPlace((String) place.getName(), place.getLatLng());
             }
         }
@@ -521,8 +523,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onLocationChanged(Location location) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-           // Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
-           // mGoogleApiClient);
+            // Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
+            // mGoogleApiClient);
             if(mCenterMarker == null) {
                 agentInterface.updateLocation(location);
                 agentInterface.startLocationBroadcast();
@@ -546,6 +548,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    private void scrollToBottom()
+    {
+        ScrollView mScrollView = (ScrollView) findViewById(R.id.SCROLLER_ID);
+        mScrollView.post(new Runnable()
+        {
+            public void run()
+            {
+                TextView mTextStatus = (TextView) findViewById(R.id.chat_text);
+                ScrollView mScrollView = (ScrollView) findViewById(R.id.SCROLLER_ID);
+                mScrollView.smoothScrollTo(0, mTextStatus.getBottom());
+            }
+        });
+    }
+
     private class MyReceiver extends BroadcastReceiver {
 
         @Override
@@ -564,12 +580,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //                            mGroupMarkerMap.get(aGroup.getName()).remove();
 
                         mGroupMarkerMap.put(aGroup.getName(),
-                                       mMap.addMarker(
-                                               new MarkerOptions().
-                                                       position(ll).
-                                                       title(aGroup.getName())
-                                                       .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker))
-                                                       .anchor(0.5f, 0.5f)));
+                                mMap.addMarker(
+                                        new MarkerOptions().
+                                                position(ll).
+                                                title(aGroup.getName())
+                                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker))
+                                                .anchor(0.5f, 0.5f)));
                     }
                 }
             }
@@ -671,8 +687,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     to_show += msg + "\n";
                 }
                 ((TextView) findViewById(R.id.chat_text)).setText(to_show);
-                if(findViewById(R.id.button_chat).getVisibility() == View.INVISIBLE)
+                if(findViewById(R.id.chat).getVisibility() == View.INVISIBLE)
                     ((ImageButton) findViewById(R.id.button_chat)).setColorFilter(Color.argb(255, 63, 81, 181));
+                scrollToBottom();
             }
 
         }
